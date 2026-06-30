@@ -27,10 +27,6 @@ export const platformSettingsData = [
         checked: true,
         label: "Monthly product updates",
       },
-      {
-        checked: false,
-        label: "Subscribe to newsletter",
-      },
     ],
   },
 ];
