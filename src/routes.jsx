@@ -6,7 +6,7 @@ import {
   ServerStackIcon,
   RectangleStackIcon,
 } from "@heroicons/react/24/solid";
-import { Home, Profile, Tables, Notifications, ContactRequests } from "@/pages/dashboard";
+import { Home, Profile, Tables, Notifications, ContactRequests, Skills } from "@/pages/dashboard";
 import Users from "@/pages/dashboard/users";
 import { SignIn } from "@/pages/auth";
 import { EnvelopeIcon } from "@heroicons/react/24/solid";
@@ -36,6 +36,12 @@ export const routes = [
         name: "contact requests",
         path: "/contact-requests",
         element: <ContactRequests />,
+      },
+      {
+        icon: <TableCellsIcon {...icon} />,
+        name: "skills",
+        path: "/skills",
+        element: <Skills />,
       },
       {
         icon: <UserCircleIcon {...icon} />,

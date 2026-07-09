@@ -12,7 +12,7 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ['User', 'ContactRequest'],
+  tagTypes: ['User', 'ContactRequest', 'Skill'],
   endpoints: (builder) => ({
     login: builder.mutation({
       query: (credentials) => ({
@@ -24,6 +24,26 @@ export const api = createApi({
     getUsers: builder.query({
       query: () => '/admin/users',
       providesTags: ['User'],
+    }),
+    getUserById: builder.query({
+      query: (id) => `/admin/users/${id}`,
+      providesTags: (result, error, id) => [{ type: 'User', id }],
+    }),
+    toggleBlockUser: builder.mutation({
+      query: ({ id, isBlocked }) => ({
+        url: `/admin/users/${id}/block`,
+        method: 'PUT',
+        body: { isBlocked },
+      }),
+      invalidatesTags: ['User'],
+    }),
+    toggleVerifyUser: builder.mutation({
+      query: ({ id, isVerified }) => ({
+        url: `/admin/users/${id}/verify`,
+        method: 'PUT',
+        body: { isVerified },
+      }),
+      invalidatesTags: ['User'],
     }),
     getMe: builder.query({
       query: () => '/admin/me',
@@ -39,7 +59,47 @@ export const api = createApi({
       }),
       invalidatesTags: ['ContactRequest'],
     }),
+    getSkills: builder.query({
+      query: () => '/admin/skills',
+      providesTags: ['Skill'],
+    }),
+    createSkill: builder.mutation({
+      query: (skill) => ({
+        url: '/admin/skills',
+        method: 'POST',
+        body: skill,
+      }),
+      invalidatesTags: ['Skill'],
+    }),
+    updateSkill: builder.mutation({
+      query: ({ id, ...patch }) => ({
+        url: `/admin/skills/${id}`,
+        method: 'PUT',
+        body: patch,
+      }),
+      invalidatesTags: ['Skill'],
+    }),
+    deleteSkill: builder.mutation({
+      query: (id) => ({
+        url: `/admin/skills/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Skill'],
+    }),
   }),
 });
 
-export const { useLoginMutation, useGetUsersQuery, useGetMeQuery, useGetContactRequestsQuery, useMarkContactRequestReadMutation } = api;
+export const { 
+  useLoginMutation, 
+  useGetUsersQuery,
+  useGetUserByIdQuery,
+  useToggleBlockUserMutation,
+  useToggleVerifyUserMutation,
+  useGetMeQuery, 
+  useGetContactRequestsQuery, 
+  useMarkContactRequestReadMutation,
+  useGetSkillsQuery,
+  useCreateSkillMutation,
+  useUpdateSkillMutation,
+  useDeleteSkillMutation
+} = api;
