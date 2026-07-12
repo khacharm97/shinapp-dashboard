@@ -19,6 +19,8 @@ import {
   useUpdateSkillMutation, 
   useDeleteSkillMutation 
 } from "../../services/api";
+import { IconSelector } from "./IconSelector";
+import * as LucideIcons from "lucide-react";
 
 export function Skills() {
   const { data: skills, isLoading } = useGetSkillsQuery();
@@ -33,6 +35,7 @@ export function Skills() {
     nameEn: "",
     nameAm: "",
     nameRu: "",
+    icon: null,
     approved: true,
   });
 
@@ -44,6 +47,7 @@ export function Skills() {
         nameEn: skill.nameEn,
         nameAm: skill.nameAm,
         nameRu: skill.nameRu,
+        icon: skill.icon || null,
         approved: skill.approved,
       });
     } else {
@@ -53,6 +57,7 @@ export function Skills() {
         nameEn: "",
         nameAm: "",
         nameRu: "",
+        icon: null,
         approved: true,
       });
     }
@@ -99,7 +104,7 @@ export function Skills() {
           <table className="w-full min-w-[640px] table-auto">
             <thead>
               <tr>
-                {["Key", "English", "Armenian", "Russian", "Status", "Actions"].map((el) => (
+                {["Icon", "Key", "English", "Armenian", "Russian", "Status", "Actions"].map((el) => (
                   <th
                     key={el}
                     className="border-b border-blue-gray-50 py-3 px-5 text-left"
@@ -122,6 +127,16 @@ export function Skills() {
 
                 return (
                   <tr key={skill.id}>
+                    <td className={className}>
+                      {(() => {
+                        if (!skill.icon) return <span className="text-xs text-blue-gray-400">None</span>;
+                        if (skill.icon.startsWith('http') || skill.icon.startsWith('/')) {
+                          return <img src={skill.icon} alt="icon" className="w-6 h-6 object-contain" />;
+                        }
+                        const Icon = LucideIcons[skill.icon];
+                        return Icon ? <Icon className="w-6 h-6 text-blue-gray-700" /> : <span className="text-xs text-blue-gray-400">{skill.icon}</span>;
+                      })()}
+                    </td>
                     <td className={className}>
                       <Typography variant="small" color="blue-gray" className="font-semibold">
                         {skill.key}
@@ -197,6 +212,10 @@ export function Skills() {
             label="Russian Name" 
             value={formData.nameRu} 
             onChange={(e) => setFormData({ ...formData, nameRu: e.target.value })} 
+          />
+          <IconSelector 
+            value={formData.icon} 
+            onChange={(val) => setFormData({ ...formData, icon: val })} 
           />
           <div className="flex items-center gap-2">
             <Checkbox 
