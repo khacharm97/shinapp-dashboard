@@ -35,6 +35,7 @@ export function Skills() {
     nameEn: "",
     nameAm: "",
     nameRu: "",
+    nameFa: "",
     icon: null,
     approved: true,
   });
@@ -47,6 +48,7 @@ export function Skills() {
         nameEn: skill.nameEn,
         nameAm: skill.nameAm,
         nameRu: skill.nameRu,
+        nameFa: skill.nameFa || "",
         icon: skill.icon || null,
         approved: skill.approved,
       });
@@ -57,6 +59,7 @@ export function Skills() {
         nameEn: "",
         nameAm: "",
         nameRu: "",
+        nameFa: "",
         icon: null,
         approved: true,
       });
@@ -104,7 +107,7 @@ export function Skills() {
           <table className="w-full min-w-[640px] table-auto">
             <thead>
               <tr>
-                {["Icon", "Key", "English", "Armenian", "Russian", "Status", "Actions"].map((el) => (
+                {["Icon", "Key", "English", "Armenian", "Russian", "Persian", "Status", "Actions"].map((el) => (
                   <th
                     key={el}
                     className="border-b border-blue-gray-50 py-3 px-5 text-left"
@@ -155,6 +158,11 @@ export function Skills() {
                     <td className={className}>
                       <Typography className="text-xs font-normal text-blue-gray-600">
                         {skill.nameRu}
+                      </Typography>
+                    </td>
+                    <td className={className}>
+                      <Typography className="text-xs font-normal text-blue-gray-600">
+                        {skill.nameFa}
                       </Typography>
                     </td>
                     <td className={className}>
@@ -212,6 +220,11 @@ export function Skills() {
             label="Russian Name" 
             value={formData.nameRu} 
             onChange={(e) => setFormData({ ...formData, nameRu: e.target.value })} 
+          />
+          <Input 
+            label="Persian Name" 
+            value={formData.nameFa} 
+            onChange={(e) => setFormData({ ...formData, nameFa: e.target.value })} 
           />
           <IconSelector 
             value={formData.icon} 
