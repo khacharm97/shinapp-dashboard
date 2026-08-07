@@ -31,6 +31,7 @@ function UserDetailsModal({ open, handleOpen, userId }) {
   if (!open) return null;
 
   const isMaster = user?.roles?.includes('MASTER');
+  const isCompany = user?.roles?.includes('COMPANY');
 
   const unapprovedSkills = user?.userInfo?.skills?.filter(skillKey => {
     const s = skillsData?.find(sd => sd.key === skillKey);
@@ -85,11 +86,11 @@ function UserDetailsModal({ open, handleOpen, userId }) {
                 />
               </div>
 
-              {isMaster && (
+              {(isMaster || isCompany) && (
                 <div className="flex items-center justify-between border-b pb-4">
                   <div>
-                    <Typography color="blue-gray" className="font-semibold">Verify Master</Typography>
-                    <Typography variant="small" color="gray">Approve master profile to show in search</Typography>
+                    <Typography color="blue-gray" className="font-semibold">Verify Profile</Typography>
+                    <Typography variant="small" color="gray">Approve profile to show in search</Typography>
                   </div>
                   <Switch 
                     color="green" 
@@ -100,11 +101,25 @@ function UserDetailsModal({ open, handleOpen, userId }) {
               )}
             </div>
 
-            {isMaster && user.userInfo && (
+            {(isMaster || isCompany) && user.userInfo && (
               <div className="flex flex-col gap-2 mt-4">
-                <Typography variant="h6" color="blue-gray">Master Info</Typography>
-                <Typography variant="small"><strong>Skills:</strong> {user.userInfo.skills?.join(', ') || 'None'}</Typography>
-                <Typography variant="small"><strong>Pricing:</strong> {user.userInfo.pricingFormat} {user.userInfo.priceValue ? `- ${user.userInfo.priceValue}` : ''}</Typography>
+                <Typography variant="h6" color="blue-gray">{isCompany ? 'Company Info' : 'Master Info'}</Typography>
+                
+                {isMaster && (
+                  <>
+                    <Typography variant="small"><strong>Skills:</strong> {user.userInfo.skills?.join(', ') || 'None'}</Typography>
+                    <Typography variant="small"><strong>Pricing:</strong> {user.userInfo.pricingFormat} {user.userInfo.priceValue ? `- ${user.userInfo.priceValue}` : ''}</Typography>
+                  </>
+                )}
+
+                {isCompany && (
+                  <>
+                    <Typography variant="small"><strong>Workers:</strong> {user.userInfo.workersCount || 'N/A'}</Typography>
+                    <Typography variant="small"><strong>ITN:</strong> {user.userInfo.itn || 'N/A'}</Typography>
+                    <Typography variant="small"><strong>Website:</strong> {user.userInfo.website || 'N/A'}</Typography>
+                  </>
+                )}
+
                 <Typography variant="small"><strong>About:</strong> {user.userInfo.about}</Typography>
 
                 {unapprovedSkills.length > 0 && (
