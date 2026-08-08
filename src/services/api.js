@@ -12,7 +12,7 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ['User', 'ContactRequest', 'Skill'],
+  tagTypes: ['User', 'ContactRequest', 'Skill', 'Announcement'],
   endpoints: (builder) => ({
     login: builder.mutation({
       query: (credentials) => ({
@@ -86,6 +86,33 @@ export const api = createApi({
       }),
       invalidatesTags: ['Skill'],
     }),
+    getAnnouncements: builder.query({
+      query: () => '/admin/announcements',
+      providesTags: ['Announcement'],
+    }),
+    createAnnouncement: builder.mutation({
+      query: (announcement) => ({
+        url: '/admin/announcements',
+        method: 'POST',
+        body: announcement,
+      }),
+      invalidatesTags: ['Announcement'],
+    }),
+    updateAnnouncement: builder.mutation({
+      query: ({ id, ...patch }) => ({
+        url: `/admin/announcements/${id}`,
+        method: 'PUT',
+        body: patch,
+      }),
+      invalidatesTags: ['Announcement'],
+    }),
+    deleteAnnouncement: builder.mutation({
+      query: (id) => ({
+        url: `/admin/announcements/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Announcement'],
+    }),
   }),
 });
 
@@ -101,5 +128,9 @@ export const {
   useGetSkillsQuery,
   useCreateSkillMutation,
   useUpdateSkillMutation,
-  useDeleteSkillMutation
+  useDeleteSkillMutation,
+  useGetAnnouncementsQuery,
+  useCreateAnnouncementMutation,
+  useUpdateAnnouncementMutation,
+  useDeleteAnnouncementMutation
 } = api;

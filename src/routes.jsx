@@ -5,8 +5,9 @@ import {
   InformationCircleIcon,
   ServerStackIcon,
   RectangleStackIcon,
+  SpeakerWaveIcon,
 } from "@heroicons/react/24/solid";
-import { Home, Profile, Tables, Notifications, ContactRequests, Skills } from "@/pages/dashboard";
+import { Home, ContactRequests, Skills, Announcements } from "@/pages/dashboard";
 import Users from "@/pages/dashboard/users";
 import { SignIn } from "@/pages/auth";
 import { EnvelopeIcon } from "@heroicons/react/24/solid";
@@ -44,22 +45,10 @@ export const routes = [
         element: <Skills />,
       },
       {
-        icon: <UserCircleIcon {...icon} />,
-        name: "profile",
-        path: "/profile",
-        element: <Profile />,
-      },
-      {
-        icon: <TableCellsIcon {...icon} />,
-        name: "tables",
-        path: "/tables",
-        element: <Tables />,
-      },
-      {
-        icon: <InformationCircleIcon {...icon} />,
-        name: "notifications",
-        path: "/notifications",
-        element: <Notifications />,
+        icon: <SpeakerWaveIcon {...icon} />,
+        name: "announcements",
+        path: "/announcements",
+        element: <Announcements />,
       },
     ],
   },
