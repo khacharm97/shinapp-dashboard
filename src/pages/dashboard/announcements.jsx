@@ -16,7 +16,7 @@ import {
   Select,
   Option,
 } from "@material-tailwind/react";
-import { PlusIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/solid";
+import { PlusIcon, PencilIcon, TrashIcon, PhotoIcon, XMarkIcon } from "@heroicons/react/24/solid";
 import {
   useGetAnnouncementsQuery,
   useCreateAnnouncementMutation,
@@ -35,6 +35,11 @@ export function Announcements() {
 
   const [open, setOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [previewUrls, setPreviewUrls] = useState([]);
+
   const [formData, setFormData] = useState({
     id: null,
     companyId: "",
@@ -61,7 +66,11 @@ export function Announcements() {
       startDate: "",
       endDate: "",
     });
+    });
     setIsEditing(false);
+    setSelectedFiles([]);
+    setExistingImages([]);
+    setPreviewUrls([]);
   };
 
   const handleAddClick = () => {
@@ -81,7 +90,11 @@ export function Announcements() {
       startDate: new Date(announcement.startDate).toISOString().split('T')[0],
       endDate: new Date(announcement.endDate).toISOString().split('T')[0],
     });
+    });
     setIsEditing(true);
+    setExistingImages(announcement.imageUrls || []);
+    setSelectedFiles([]);
+    setPreviewUrls([]);
     handleOpen();
   };
 
@@ -93,31 +106,60 @@ export function Announcements() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    const data = new FormData();
+    data.append("companyId", formData.companyId);
+    data.append("sphere", formData.sphere);
+    data.append("title", formData.title);
+    data.append("description", formData.description);
+    data.append("urgent", formData.urgent);
+    data.append("status", formData.status);
+    data.append("startDate", formData.startDate);
+    data.append("endDate", formData.endDate);
+    
+    selectedFiles.forEach((file) => {
+      data.append("images", file);
+    });
+    
+    existingImages.forEach((img) => {
+      data.append("existingImages", img);
+    });
+
     if (isEditing) {
       await updateAnnouncement({
         id: formData.id,
-        companyId: formData.companyId,
-        sphere: formData.sphere,
-        title: formData.title,
-        description: formData.description,
-        urgent: formData.urgent,
-        status: formData.status,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
+        body: data,
       });
     } else {
-      await createAnnouncement({
-        companyId: formData.companyId,
-        sphere: formData.sphere,
-        title: formData.title,
-        description: formData.description,
-        urgent: formData.urgent,
-        status: formData.status,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-      });
+      await createAnnouncement(data);
     }
     handleOpen();
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files);
+      const totalImages = existingImages.length + selectedFiles.length + filesArray.length;
+      
+      if (totalImages > 3) {
+        alert("You can only upload up to 3 images.");
+        return;
+      }
+      
+      setSelectedFiles(prev => [...prev, ...filesArray]);
+      
+      const newPreviewUrls = filesArray.map(file => URL.createObjectURL(file));
+      setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
+    }
+  };
+
+  const removeExistingImage = (index) => {
+    setExistingImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removeSelectedFile = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setPreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   const companies = users?.filter(u => u.roles.includes('COMPANY') && u.verifiedAt) || [];
@@ -284,6 +326,52 @@ export function Announcements() {
               onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
               required
             />
+            <div className="flex flex-col gap-2 mt-2">
+              <Typography variant="small" color="blue-gray" className="font-medium">
+                Images (Max 3)
+              </Typography>
+              <div className="flex flex-wrap gap-4">
+                {existingImages.map((url, i) => (
+                  <div key={`existing-${i}`} className="relative group w-24 h-24 rounded-lg overflow-hidden border border-gray-300">
+                    <img src={url} alt={`Existing ${i}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeExistingImage(i)}
+                      className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                    >
+                      <XMarkIcon className="w-6 h-6" />
+                    </button>
+                  </div>
+                ))}
+                
+                {previewUrls.map((url, i) => (
+                  <div key={`new-${i}`} className="relative group w-24 h-24 rounded-lg overflow-hidden border border-gray-300">
+                    <img src={url} alt={`New ${i}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removeSelectedFile(i)}
+                      className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                    >
+                      <XMarkIcon className="w-6 h-6" />
+                    </button>
+                  </div>
+                ))}
+                
+                {(existingImages.length + selectedFiles.length) < 3 && (
+                  <label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-gray-400 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors text-gray-500 hover:text-gray-700">
+                    <PhotoIcon className="w-6 h-6 mb-1" />
+                    <span className="text-xs font-medium">Upload</span>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      multiple 
+                      className="hidden" 
+                      onChange={handleFileChange}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
           </DialogBody>
           <DialogFooter>
             <Button variant="text" color="red" onClick={handleOpen} className="mr-1">

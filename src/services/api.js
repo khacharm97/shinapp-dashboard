@@ -99,10 +99,10 @@ export const api = createApi({
       invalidatesTags: ['Announcement'],
     }),
     updateAnnouncement: builder.mutation({
-      query: ({ id, ...patch }) => ({
+      query: ({ id, body }) => ({
         url: `/admin/announcements/${id}`,
         method: 'PUT',
-        body: patch,
+        body: body,
       }),
       invalidatesTags: ['Announcement'],
     }),
