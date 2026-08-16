@@ -35,7 +35,7 @@ export function Announcements() {
 
   const [open, setOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  
+
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
   const [previewUrls, setPreviewUrls] = useState([]);
@@ -66,7 +66,6 @@ export function Announcements() {
       startDate: "",
       endDate: "",
     });
-    });
     setIsEditing(false);
     setSelectedFiles([]);
     setExistingImages([]);
@@ -90,7 +89,6 @@ export function Announcements() {
       startDate: new Date(announcement.startDate).toISOString().split('T')[0],
       endDate: new Date(announcement.endDate).toISOString().split('T')[0],
     });
-    });
     setIsEditing(true);
     setExistingImages(announcement.imageUrls || []);
     setSelectedFiles([]);
@@ -106,7 +104,7 @@ export function Announcements() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const data = new FormData();
     data.append("companyId", formData.companyId);
     data.append("sphere", formData.sphere);
@@ -116,11 +114,11 @@ export function Announcements() {
     data.append("status", formData.status);
     data.append("startDate", formData.startDate);
     data.append("endDate", formData.endDate);
-    
+
     selectedFiles.forEach((file) => {
       data.append("images", file);
     });
-    
+
     existingImages.forEach((img) => {
       data.append("existingImages", img);
     });
@@ -140,14 +138,14 @@ export function Announcements() {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
       const totalImages = existingImages.length + selectedFiles.length + filesArray.length;
-      
+
       if (totalImages > 3) {
         alert("You can only upload up to 3 images.");
         return;
       }
-      
+
       setSelectedFiles(prev => [...prev, ...filesArray]);
-      
+
       const newPreviewUrls = filesArray.map(file => URL.createObjectURL(file));
       setPreviewUrls(prev => [...prev, ...newPreviewUrls]);
     }
@@ -200,8 +198,8 @@ export function Announcements() {
             <tbody>
               {announcements?.map((announcement, key) => {
                 const className = `py-3 px-5 ${key === announcements.length - 1
-                    ? ""
-                    : "border-b border-blue-gray-50"
+                  ? ""
+                  : "border-b border-blue-gray-50"
                   }`;
 
                 return (
@@ -343,7 +341,7 @@ export function Announcements() {
                     </button>
                   </div>
                 ))}
-                
+
                 {previewUrls.map((url, i) => (
                   <div key={`new-${i}`} className="relative group w-24 h-24 rounded-lg overflow-hidden border border-gray-300">
                     <img src={url} alt={`New ${i}`} className="w-full h-full object-cover" />
@@ -356,16 +354,16 @@ export function Announcements() {
                     </button>
                   </div>
                 ))}
-                
+
                 {(existingImages.length + selectedFiles.length) < 3 && (
                   <label className="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-gray-400 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors text-gray-500 hover:text-gray-700">
                     <PhotoIcon className="w-6 h-6 mb-1" />
                     <span className="text-xs font-medium">Upload</span>
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      multiple 
-                      className="hidden" 
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
                       onChange={handleFileChange}
                     />
                   </label>
