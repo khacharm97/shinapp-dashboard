@@ -21,6 +21,8 @@ import {
   useUpdateSkillMutation
 } from "../../services/api";
 
+import { AddUserModal } from "./AddUserModal";
+
 function UserDetailsModal({ open, handleOpen, userId }) {
   const { data: user, isLoading } = useGetUserByIdQuery(userId, { skip: !userId });
   const [toggleBlock] = useToggleBlockUserMutation();
@@ -178,6 +180,7 @@ function UserDetailsModal({ open, handleOpen, userId }) {
 export function Users() {
   const { data: users, isLoading, error } = useGetUsersQuery();
   const [selectedUser, setSelectedUser] = useState(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   if (isLoading) {
     return <Typography className="p-8 text-center">Loading users...</Typography>;
@@ -195,11 +198,19 @@ export function Users() {
         userId={selectedUser} 
       />
 
+      <AddUserModal
+        open={isAddModalOpen}
+        handleOpen={() => setIsAddModalOpen(!isAddModalOpen)}
+      />
+
       <Card>
-        <CardHeader variant="gradient" color="blue" className="mb-8 p-6">
+        <CardHeader variant="gradient" color="blue" className="mb-8 p-6 flex justify-between items-center">
           <Typography variant="h6" color="white">
             Users Table
           </Typography>
+          <Button color="white" size="sm" onClick={() => setIsAddModalOpen(true)}>
+            Add User
+          </Button>
         </CardHeader>
         <CardBody className="overflow-x-scroll px-0 pt-0 pb-2">
           <table className="w-full min-w-[640px] table-auto">

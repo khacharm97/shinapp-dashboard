@@ -113,6 +113,14 @@ export const api = createApi({
       }),
       invalidatesTags: ['Announcement'],
     }),
+    createUser: builder.mutation({
+      query: (user) => ({
+        url: '/admin/users',
+        method: 'POST',
+        body: user,
+      }),
+      invalidatesTags: ['User'],
+    }),
   }),
 });
 
@@ -122,6 +130,7 @@ export const {
   useGetUserByIdQuery,
   useToggleBlockUserMutation,
   useToggleVerifyUserMutation,
+  useCreateUserMutation,
   useGetMeQuery, 
   useGetContactRequestsQuery, 
   useMarkContactRequestReadMutation,
