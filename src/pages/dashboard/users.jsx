@@ -10,7 +10,9 @@ import {
   DialogFooter,
   Button,
   Switch,
-  Chip
+  Chip,
+  Input,
+  Textarea
 } from "@material-tailwind/react";
 import { 
   useGetUsersQuery, 
@@ -18,7 +20,9 @@ import {
   useToggleBlockUserMutation, 
   useToggleVerifyUserMutation,
   useGetSkillsQuery,
-  useUpdateSkillMutation
+  useUpdateSkillMutation,
+  useCreateAdminPortfolioMutation,
+  useDeleteAdminPortfolioMutation
 } from "../../services/api";
 
 import { AddUserModal } from "./AddUserModal";
@@ -29,6 +33,13 @@ function UserDetailsModal({ open, handleOpen, userId }) {
   const [toggleVerify] = useToggleVerifyUserMutation();
   const { data: skillsData } = useGetSkillsQuery();
   const [updateSkill] = useUpdateSkillMutation();
+  const [createPortfolio, { isLoading: isCreatingPortfolio }] = useCreateAdminPortfolioMutation();
+  const [deletePortfolio, { isLoading: isDeletingPortfolio }] = useDeleteAdminPortfolioMutation();
+
+  const [showAddPortfolio, setShowAddPortfolio] = useState(false);
+  const [portTitle, setPortTitle] = useState("");
+  const [portDesc, setPortDesc] = useState("");
+  const [portFiles, setPortFiles] = useState([]);
 
   if (!open) return null;
 
@@ -44,6 +55,30 @@ function UserDetailsModal({ open, handleOpen, userId }) {
     const skill = skillsData?.find(s => s.key === skillKey);
     if (skill) {
       await updateSkill({ id: skill.id, approved: true }).unwrap();
+    }
+  };
+
+  const handleAddPortfolio = async () => {
+    if (!portTitle || portFiles.length === 0) return;
+    const formData = new FormData();
+    formData.append('title', portTitle);
+    formData.append('description', portDesc);
+    portFiles.forEach(f => formData.append('images', f));
+
+    try {
+      await createPortfolio({ id: userId, formData }).unwrap();
+      setShowAddPortfolio(false);
+      setPortTitle("");
+      setPortDesc("");
+      setPortFiles([]);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeletePortfolio = async (portfolioId) => {
+    if (confirm('Are you sure you want to delete this portfolio?')) {
+      await deletePortfolio({ id: userId, portfolioId }).unwrap();
     }
   };
 
@@ -141,12 +176,42 @@ function UserDetailsModal({ open, handleOpen, userId }) {
                   </div>
                 )}
                 
-                {user.portfolios && user.portfolios.length > 0 && (
-                  <div className="mt-4">
-                    <Typography variant="h6" color="blue-gray" className="mb-2">Portfolios ({user.portfolios.length})</Typography>
+                <div className="mt-4 border-t pt-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <Typography variant="h6" color="blue-gray">Portfolios ({user.portfolios?.length || 0})</Typography>
+                    <Button size="sm" variant="outlined" onClick={() => setShowAddPortfolio(!showAddPortfolio)}>
+                      {showAddPortfolio ? 'Cancel' : 'Add Portfolio'}
+                    </Button>
+                  </div>
+
+                  {showAddPortfolio && (
+                    <div className="flex flex-col gap-3 p-4 bg-gray-50 border rounded-lg mb-4">
+                      <Input label="Title" value={portTitle} onChange={e => setPortTitle(e.target.value)} />
+                      <Textarea label="Description" value={portDesc} onChange={e => setPortDesc(e.target.value)} />
+                      <Input 
+                        type="file" 
+                        multiple 
+                        accept="image/*" 
+                        onChange={e => setPortFiles(Array.from(e.target.files).slice(0, 3))}
+                        label="Images (Max 3)"
+                      />
+                      <Button size="sm" color="blue" onClick={handleAddPortfolio} disabled={isCreatingPortfolio || !portTitle || portFiles.length === 0}>
+                        {isCreatingPortfolio ? 'Saving...' : 'Save Portfolio'}
+                      </Button>
+                    </div>
+                  )}
+
+                  {user.portfolios && user.portfolios.length > 0 && (
                     <div className="grid grid-cols-2 gap-4">
                       {user.portfolios.map(port => (
-                        <div key={port.id} className="border p-2 rounded-lg bg-gray-50">
+                        <div key={port.id} className="border p-2 rounded-lg bg-gray-50 relative group">
+                          <button 
+                            onClick={() => handleDeletePortfolio(port.id)}
+                            disabled={isDeletingPortfolio}
+                            className="absolute top-1 right-1 z-10 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            ×
+                          </button>
                           {port.imageUrls && port.imageUrls.length > 0 ? (
                             <div className="flex gap-2 overflow-x-auto mb-2 pb-1">
                               {port.imageUrls.map((url, i) => (
@@ -161,8 +226,8 @@ function UserDetailsModal({ open, handleOpen, userId }) {
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -180,6 +245,7 @@ function UserDetailsModal({ open, handleOpen, userId }) {
 export function Users() {
   const { data: users, isLoading, error } = useGetUsersQuery();
   const [selectedUser, setSelectedUser] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   if (isLoading) {
@@ -199,8 +265,12 @@ export function Users() {
       />
 
       <AddUserModal
-        open={isAddModalOpen}
-        handleOpen={() => setIsAddModalOpen(!isAddModalOpen)}
+        open={isAddModalOpen || !!editingUser}
+        handleOpen={() => {
+          setIsAddModalOpen(false);
+          setEditingUser(null);
+        }}
+        initialData={editingUser}
       />
 
       <Card>
@@ -280,9 +350,14 @@ export function Users() {
                         )}
                       </td>
                       <td className={className}>
-                        <Button variant="text" size="sm" onClick={() => setSelectedUser(user.id)}>
-                          Details
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button variant="text" size="sm" onClick={() => setSelectedUser(user.id)}>
+                            Details
+                          </Button>
+                          <Button variant="text" size="sm" color="blue" onClick={() => setEditingUser(user)}>
+                            Edit
+                          </Button>
+                        </div>
                       </td>
                     </tr>
                   );

@@ -121,6 +121,29 @@ export const api = createApi({
       }),
       invalidatesTags: ['User'],
     }),
+    updateUser: builder.mutation({
+      query: ({ id, ...user }) => ({
+        url: `/admin/users/${id}`,
+        method: 'PUT',
+        body: user,
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'User', id }, 'User'],
+    }),
+    createAdminPortfolio: builder.mutation({
+      query: ({ id, formData }) => ({
+        url: `/admin/users/${id}/portfolios`,
+        method: 'POST',
+        body: formData,
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'User', id }],
+    }),
+    deleteAdminPortfolio: builder.mutation({
+      query: ({ id, portfolioId }) => ({
+        url: `/admin/users/${id}/portfolios/${portfolioId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, { id }) => [{ type: 'User', id }],
+    }),
   }),
 });
 
@@ -141,5 +164,8 @@ export const {
   useGetAnnouncementsQuery,
   useCreateAnnouncementMutation,
   useUpdateAnnouncementMutation,
-  useDeleteAnnouncementMutation
+  useDeleteAnnouncementMutation,
+  useUpdateUserMutation,
+  useCreateAdminPortfolioMutation,
+  useDeleteAdminPortfolioMutation,
 } = api;
