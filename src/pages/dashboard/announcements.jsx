@@ -255,10 +255,10 @@ export function Announcements() {
         </CardBody>
       </Card>
 
-      <Dialog open={open} handler={handleOpen}>
-        <form onSubmit={handleSubmit}>
+      <Dialog open={open} handler={handleOpen} className="max-h-[90vh]">
+        <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
           <DialogHeader>{isEditing ? "Edit" : "Add"} Announcement</DialogHeader>
-          <DialogBody divider className="flex flex-col gap-4">
+          <DialogBody divider className="flex flex-col gap-4 max-h-[65vh] overflow-y-auto">
             <Select
               label="Company"
               value={formData.companyId}

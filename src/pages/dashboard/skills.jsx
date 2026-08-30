@@ -197,9 +197,9 @@ export function Skills() {
         </CardBody>
       </Card>
 
-      <Dialog open={openDialog} handler={handleCloseDialog}>
+      <Dialog open={openDialog} handler={handleCloseDialog} className="max-h-[90vh]">
         <DialogHeader>{editingSkill ? "Edit Skill" : "Add New Skill"}</DialogHeader>
-        <DialogBody divider className="flex flex-col gap-4">
+        <DialogBody divider className="flex flex-col gap-4 max-h-[65vh] overflow-y-auto">
           <Input 
             label="Key" 
             value={formData.key} 
