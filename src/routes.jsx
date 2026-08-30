@@ -1,10 +1,7 @@
 import {
   HomeIcon,
-  UserCircleIcon,
   TableCellsIcon,
-  InformationCircleIcon,
   ServerStackIcon,
-  RectangleStackIcon,
   SpeakerWaveIcon,
 } from "@heroicons/react/24/solid";
 import { Home, ContactRequests, Skills, Announcements } from "@/pages/dashboard";
