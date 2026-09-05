@@ -180,7 +180,7 @@ export function Announcements() {
           <table className="w-full min-w-[640px] table-auto">
             <thead>
               <tr>
-                {["company", "title", "sphere", "urgent", "status", "start date", "end date", "action"].map((el) => (
+                {["company", "title", "sphere", "urgent", "status", "views", "start date", "end date", "action"].map((el) => (
                   <th
                     key={el}
                     className="border-b border-blue-gray-50 py-3 px-5 text-left"
@@ -227,6 +227,11 @@ export function Announcements() {
                     <td className={className}>
                       <Typography className="text-xs font-semibold text-blue-gray-600">
                         {announcement.status}
+                      </Typography>
+                    </td>
+                    <td className={className}>
+                      <Typography className="text-xs font-semibold text-blue-gray-600">
+                        {announcement.viewsCount ?? 0}
                       </Typography>
                     </td>
                     <td className={className}>
