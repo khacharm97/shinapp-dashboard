@@ -8,11 +8,17 @@ import {
   Input,
   Typography,
   Textarea,
-  Checkbox,
   Switch
 } from "@material-tailwind/react";
 import { useCreateUserMutation, useUpdateUserMutation, useGetSkillsQuery } from "../../services/api";
 import { armeniaRegions } from "../../lib/armenia-regions";
+import { SkillsMultiSelect } from "./SkillsMultiSelect";
+
+const PRICING_FORMATS = [
+  { value: "daily", label: "Daily rate" },
+  { value: "sqm", label: "Per sq.m" },
+  { value: "contract", label: "By contract" },
+];
 
 export function AddUserModal({ open, handleOpen, initialData }) {
   const [createUser, { isLoading: isCreating }] = useCreateUserMutation();
@@ -41,6 +47,7 @@ export function AddUserModal({ open, handleOpen, initialData }) {
     onlinePay: false,
     buyMaterial: false,
     nightShift: false,
+    multipleJobs: false,
     socialFacebook: "",
     socialInstagram: "",
     socialTiktok: ""
@@ -73,6 +80,7 @@ export function AddUserModal({ open, handleOpen, initialData }) {
           onlinePay: initialData.userInfo?.onlinePay || false,
           buyMaterial: initialData.userInfo?.buyMaterial || false,
           nightShift: initialData.userInfo?.nightShift || false,
+          multipleJobs: initialData.userInfo?.multipleJobs || false,
           socialFacebook: initialData.userInfo?.socialFacebook || "",
           socialInstagram: initialData.userInfo?.socialInstagram || "",
           socialTiktok: initialData.userInfo?.socialTiktok || ""
@@ -98,6 +106,7 @@ export function AddUserModal({ open, handleOpen, initialData }) {
           onlinePay: false,
           buyMaterial: false,
           nightShift: false,
+          multipleJobs: false,
           socialFacebook: "",
           socialInstagram: "",
           socialTiktok: ""
@@ -116,13 +125,8 @@ export function AddUserModal({ open, handleOpen, initialData }) {
     setFormData(prev => ({ ...prev, role: e.target.value }));
   };
 
-  const handleSkillToggle = (skillKey) => {
-    setFormData(prev => {
-      const skills = prev.skills.includes(skillKey)
-        ? prev.skills.filter(k => k !== skillKey)
-        : [...prev.skills, skillKey];
-      return { ...prev, skills };
-    });
+  const handleSkillsChange = (skills) => {
+    setFormData(prev => ({ ...prev, skills }));
   };
 
   const handleSwitchChange = (e) => {
@@ -247,30 +251,53 @@ export function AddUserModal({ open, handleOpen, initialData }) {
                   <Typography variant="small" color="blue-gray" className="font-bold">
                     Skills
                   </Typography>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 border border-blue-gray-100 p-4 rounded-lg max-h-48 overflow-y-auto">
-                    {skillsData?.map(skill => (
-                      <Checkbox 
-                        key={skill.key}
-                        label={skill.nameEn}
-                        checked={formData.skills.includes(skill.key)}
-                        onChange={() => handleSkillToggle(skill.key)}
-                        containerProps={{ className: "p-0" }}
-                        labelProps={{ className: "text-sm" }}
-                      />
-                    ))}
-                  </div>
+                  <SkillsMultiSelect
+                    options={(skillsData || []).map(skill => ({ value: skill.key, label: skill.nameEn }))}
+                    selected={formData.skills}
+                    onChange={handleSkillsChange}
+                    placeholder="Select skills..."
+                  />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input label="Pricing Format (e.g. hourly, fixed)" name="pricingFormat" value={formData.pricingFormat} onChange={handleChange} />
-                  <Input label="Price Value (e.g. 5000 AMD)" name="priceValue" value={formData.priceValue} onChange={handleChange} />
+                  <div className="flex flex-col gap-2">
+                    <Typography variant="small" color="blue-gray" className="font-bold">
+                      Pricing Format
+                    </Typography>
+                    <select
+                      className="w-full border border-blue-gray-200 rounded-lg px-3 py-2.5 text-sm text-blue-gray-700 focus:border-blue-500 focus:outline-none"
+                      name="pricingFormat"
+                      value={formData.pricingFormat}
+                      onChange={(e) => {
+                        handleChange(e);
+                        if (e.target.value !== "daily" && e.target.value !== "sqm") {
+                          setFormData(prev => ({ ...prev, priceValue: "" }));
+                        }
+                      }}
+                    >
+                      <option value="">Select pricing format...</option>
+                      {PRICING_FORMATS.map(f => (
+                        <option key={f.value} value={f.value}>{f.label}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {(formData.pricingFormat === "daily" || formData.pricingFormat === "sqm") && (
+                      <div className="flex flex-col gap-2">
+                        <Typography variant="small" color="blue-gray" className="font-bold">
+                          Price
+                        </Typography>
+                        <Input label="Price" name="priceValue" type="number" value={formData.priceValue} onChange={handleChange} />
+                      </div>
+                  )}
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 border border-blue-gray-100 p-4 rounded-lg">
-                  <Switch id="largeScale" name="largeScale" label="Large Scale" checked={formData.largeScale} onChange={handleSwitchChange} />
-                  <Switch id="urgentOrders" name="urgentOrders" label="Urgent Orders" checked={formData.urgentOrders} onChange={handleSwitchChange} />
-                  <Switch id="onlinePay" name="onlinePay" label="Online Pay" checked={formData.onlinePay} onChange={handleSwitchChange} />
-                  <Switch id="buyMaterial" name="buyMaterial" label="Buy Material" checked={formData.buyMaterial} onChange={handleSwitchChange} />
-                  <Switch id="nightShift" name="nightShift" label="Night Shift" checked={formData.nightShift} onChange={handleSwitchChange} />
+                <div className="grid grid-cols-2 gap-4 border border-blue-gray-100 p-4 rounded-lg">
+                  <Switch id="largeScale" name="largeScale" label="Do you work on large-scale projects?" checked={formData.largeScale} onChange={handleSwitchChange} />
+                  <Switch id="urgentOrders" name="urgentOrders" label="Can you take urgent orders?" checked={formData.urgentOrders} onChange={handleSwitchChange} />
+                  <Switch id="onlinePay" name="onlinePay" label="Do you accept online payments?" checked={formData.onlinePay} onChange={handleSwitchChange} />
+                  <Switch id="buyMaterial" name="buyMaterial" label="Do you buy the material?" checked={formData.buyMaterial} onChange={handleSwitchChange} />
+                  <Switch id="nightShift" name="nightShift" label="Do you work night shifts?" checked={formData.nightShift} onChange={handleSwitchChange} />
+                  <Switch id="multipleJobs" name="multipleJobs" label="Can you take on several jobs at the same time?" checked={formData.multipleJobs} onChange={handleSwitchChange} />
                 </div>
               </>
             )}
