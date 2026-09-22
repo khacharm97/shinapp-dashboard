@@ -1,4 +1,16 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import { io } from 'socket.io-client';
+
+const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const apiUrl = rawApiUrl.startsWith('http') ? rawApiUrl : `https://${rawApiUrl}`;
+
+function connectSocket(namespace) {
+  const token = localStorage.getItem('token');
+  return io(namespace ? `${apiUrl}/${namespace}` : apiUrl, {
+    auth: { token: `Bearer ${token}` },
+    extraHeaders: { authorization: `Bearer ${token}` },
+  });
+}
 
 export const api = createApi({
   reducerPath: 'api',
@@ -12,7 +24,7 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ['User', 'ContactRequest', 'Skill', 'Announcement'],
+  tagTypes: ['User', 'ContactRequest', 'Skill', 'Announcement', 'SupportConversation', 'SupportMessage', 'Notification'],
   endpoints: (builder) => ({
     login: builder.mutation({
       query: (credentials) => ({
@@ -144,6 +156,162 @@ export const api = createApi({
       }),
       invalidatesTags: (result, error, { id }) => [{ type: 'User', id }],
     }),
+    getSupportConversations: builder.query({
+      query: () => '/chat/conversations?type=SUPPORT',
+      providesTags: ['SupportConversation'],
+    }),
+    getSupportMessages: builder.query({
+      query: (conversationId) => `/chat/conversations/${conversationId}/messages?limit=50`,
+      transformResponse: (res) => res.items,
+      providesTags: (result, error, conversationId) => [{ type: 'SupportMessage', id: conversationId }],
+    }),
+    sendSupportMessage: builder.mutation({
+      query: (body) => ({ url: '/chat/messages', method: 'POST', body }),
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+          dispatch(
+            api.util.updateQueryData('getSupportMessages', data.conversationId, (draft) => {
+              if (!draft.some((m) => m.id === data.message.id)) draft.push(data.message);
+            }),
+          );
+          dispatch(api.util.invalidateTags(['SupportConversation']));
+        } catch {
+          // surfaced to the caller via the mutation result
+        }
+      },
+    }),
+    markSupportConversationRead: builder.mutation({
+      query: (conversationId) => ({
+        url: `/chat/conversations/${conversationId}/read`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['SupportConversation'],
+    }),
+    setSupportConversationStatus: builder.mutation({
+      query: ({ conversationId, status }) => ({
+        url: `/chat/conversations/${conversationId}/status`,
+        method: 'POST',
+        body: { status },
+      }),
+      async onQueryStarted({ conversationId, status }, { dispatch, queryFulfilled }) {
+        const patch = dispatch(
+          api.util.updateQueryData('getSupportConversations', undefined, (draft) => {
+            const convo = draft.find((c) => c.id === conversationId);
+            if (convo) convo.status = status;
+          }),
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo();
+        }
+      },
+    }),
+    // Always-mounted in the dashboard navbar — keeps a live chat socket open so
+    // support messages update every open thread/list in real time instead of
+    // relying on polling, and so the backend sees this admin as "online" and
+    // skips redundant push notifications while the dashboard is open.
+    getSupportUnreadCount: builder.query({
+      query: () => '/chat/unread-count',
+      async onCacheEntryAdded(_arg, { updateCachedData, cacheDataLoaded, cacheEntryRemoved, dispatch, getState }) {
+        const socket = connectSocket('chat');
+        try {
+          await cacheDataLoaded;
+
+          socket.on('chat:message', ({ conversationId, message, conversationStatus }) => {
+            const myId = api.endpoints.getMe.select()(getState())?.data?.id;
+            const fromOther = message.senderId !== myId;
+
+            dispatch(
+              api.util.updateQueryData('getSupportMessages', conversationId, (draft) => {
+                if (!draft.some((m) => m.id === message.id)) draft.push(message);
+              }),
+            );
+
+            dispatch(
+              api.util.updateQueryData('getSupportConversations', undefined, (draft) => {
+                const idx = draft.findIndex((c) => c.id === conversationId);
+                if (idx === -1) {
+                  dispatch(api.util.invalidateTags(['SupportConversation']));
+                  return;
+                }
+                const convo = draft[idx];
+                convo.lastMessage = message;
+                convo.lastMessageAt = message.createdAt;
+                if (conversationStatus) convo.status = conversationStatus;
+                if (fromOther) convo.unreadCount += 1;
+                draft.splice(idx, 1);
+                draft.unshift(convo);
+              }),
+            );
+
+            if (fromOther) {
+              updateCachedData((draft) => {
+                draft.count += 1;
+              });
+            }
+          });
+        } catch {
+          // cache entry removed before load resolved
+        }
+
+        await cacheEntryRemoved;
+        socket.disconnect();
+      },
+    }),
+    getNotifications: builder.query({
+      query: () => '/notifications',
+      providesTags: ['Notification'],
+      async onCacheEntryAdded(_arg, { updateCachedData, cacheDataLoaded, cacheEntryRemoved }) {
+        const socket = connectSocket();
+        try {
+          await cacheDataLoaded;
+          socket.on('new_notification', (notification) => {
+            updateCachedData((draft) => {
+              if (draft?.notifications) draft.notifications.unshift(notification);
+            });
+          });
+        } catch {
+          // cache entry removed before load resolved
+        }
+        await cacheEntryRemoved;
+        socket.disconnect();
+      },
+    }),
+    markNotificationRead: builder.mutation({
+      query: (id) => ({ url: `/notifications/${id}/read`, method: 'PUT' }),
+      async onQueryStarted(id, { dispatch, queryFulfilled }) {
+        const patch = dispatch(
+          api.util.updateQueryData('getNotifications', undefined, (draft) => {
+            const target = draft?.notifications?.find((n) => n.id === id);
+            if (target) target.isRead = true;
+          }),
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo();
+        }
+      },
+    }),
+    markAllNotificationsRead: builder.mutation({
+      query: () => ({ url: '/notifications/read-all', method: 'PUT' }),
+      async onQueryStarted(_arg, { dispatch, queryFulfilled }) {
+        const patch = dispatch(
+          api.util.updateQueryData('getNotifications', undefined, (draft) => {
+            draft?.notifications?.forEach((n) => {
+              n.isRead = true;
+            });
+          }),
+        );
+        try {
+          await queryFulfilled;
+        } catch {
+          patch.undo();
+        }
+      },
+    }),
   }),
 });
 
@@ -168,4 +336,13 @@ export const {
   useUpdateUserMutation,
   useCreateAdminPortfolioMutation,
   useDeleteAdminPortfolioMutation,
+  useGetSupportConversationsQuery,
+  useGetSupportMessagesQuery,
+  useSendSupportMessageMutation,
+  useMarkSupportConversationReadMutation,
+  useSetSupportConversationStatusMutation,
+  useGetSupportUnreadCountQuery,
+  useGetNotificationsQuery,
+  useMarkNotificationReadMutation,
+  useMarkAllNotificationsReadMutation,
 } = api;

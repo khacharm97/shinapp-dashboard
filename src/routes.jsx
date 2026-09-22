@@ -3,8 +3,9 @@ import {
   TableCellsIcon,
   ServerStackIcon,
   SpeakerWaveIcon,
+  LifebuoyIcon,
 } from "@heroicons/react/24/solid";
-import { Home, ContactRequests, Skills, Announcements } from "@/pages/dashboard";
+import { Home, ContactRequests, Skills, Announcements, SupportChat } from "@/pages/dashboard";
 import Users from "@/pages/dashboard/users";
 import { SignIn } from "@/pages/auth";
 import { EnvelopeIcon } from "@heroicons/react/24/solid";
@@ -34,6 +35,12 @@ export const routes = [
         name: "contact requests",
         path: "/contact-requests",
         element: <ContactRequests />,
+      },
+      {
+        icon: <LifebuoyIcon {...icon} />,
+        name: "support chat",
+        path: "/support-chat",
+        element: <SupportChat />,
       },
       {
         icon: <TableCellsIcon {...icon} />,
