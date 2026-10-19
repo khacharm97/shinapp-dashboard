@@ -22,6 +22,9 @@ import {
 import { IconSelector } from "./IconSelector";
 import * as LucideIcons from "lucide-react";
 
+// Fallback color for a skill badge on the website home page.
+const DEFAULT_SKILL_COLOR = "#6823F1";
+
 export function Skills() {
   const { data: skills, isLoading } = useGetSkillsQuery();
   const [createSkill] = useCreateSkillMutation();
@@ -37,6 +40,7 @@ export function Skills() {
     nameRu: "",
     nameFa: "",
     icon: null,
+    color: DEFAULT_SKILL_COLOR,
     approved: true,
   });
 
@@ -50,6 +54,7 @@ export function Skills() {
         nameRu: skill.nameRu,
         nameFa: skill.nameFa || "",
         icon: skill.icon || null,
+        color: skill.color || DEFAULT_SKILL_COLOR,
         approved: skill.approved,
       });
     } else {
@@ -61,6 +66,7 @@ export function Skills() {
         nameRu: "",
         nameFa: "",
         icon: null,
+        color: DEFAULT_SKILL_COLOR,
         approved: true,
       });
     }
@@ -137,7 +143,7 @@ export function Skills() {
                           return <img src={skill.icon} alt="icon" className="w-6 h-6 object-contain" />;
                         }
                         const Icon = LucideIcons[skill.icon];
-                        return Icon ? <Icon className="w-6 h-6 text-blue-gray-700" /> : <span className="text-xs text-blue-gray-400">{skill.icon}</span>;
+                        return Icon ? <Icon className="w-6 h-6 text-blue-gray-700" style={skill.color ? { color: skill.color } : undefined} /> : <span className="text-xs text-blue-gray-400">{skill.icon}</span>;
                       })()}
                     </td>
                     <td className={className}>
@@ -230,6 +236,22 @@ export function Skills() {
             value={formData.icon} 
             onChange={(val) => setFormData({ ...formData, icon: val })} 
           />
+          <div className="flex items-center gap-3">
+            <input
+              type="color"
+              aria-label="Icon color"
+              value={formData.color}
+              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+              className="h-10 w-14 cursor-pointer rounded border border-blue-gray-200 bg-transparent p-1"
+            />
+            <Typography variant="small" color="blue-gray" className="font-medium">
+              Icon color <span className="font-mono text-blue-gray-400">{formData.color}</span>
+            </Typography>
+            {(() => {
+              const Icon = formData.icon && LucideIcons[formData.icon];
+              return Icon ? <Icon className="w-6 h-6" style={{ color: formData.color }} /> : null;
+            })()}
+          </div>
           <div className="flex items-center gap-2">
             <Checkbox 
               id="approved"
