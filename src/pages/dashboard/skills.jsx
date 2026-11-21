@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Card,
   CardHeader,
@@ -17,7 +17,8 @@ import {
   useGetSkillsQuery, 
   useCreateSkillMutation, 
   useUpdateSkillMutation, 
-  useDeleteSkillMutation 
+  useDeleteSkillMutation,
+  useDiscardSkillIconsMutation,
 } from "../../services/api";
 import { IconSelector } from "./IconSelector";
 import * as LucideIcons from "lucide-react";
@@ -30,6 +31,10 @@ export function Skills() {
   const [createSkill] = useCreateSkillMutation();
   const [updateSkill] = useUpdateSkillMutation();
   const [deleteSkill] = useDeleteSkillMutation();
+  const [discardSkillIcons] = useDiscardSkillIconsMutation();
+  // Icons uploaded while the form is open. On close they're sent for cleanup;
+  // the backend keeps whichever one a skill actually references.
+  const pendingUploadsRef = useRef([]);
 
   const [openDialog, setOpenDialog] = useState(false);
   const [editingSkill, setEditingSkill] = useState(null);
@@ -75,6 +80,9 @@ export function Skills() {
 
   const handleCloseDialog = () => {
     setOpenDialog(false);
+    const pending = pendingUploadsRef.current;
+    pendingUploadsRef.current = [];
+    if (pending.length) discardSkillIcons(pending);
   };
 
   const handleSave = async () => {
@@ -234,7 +242,8 @@ export function Skills() {
           />
           <IconSelector 
             value={formData.icon} 
-            onChange={(val) => setFormData({ ...formData, icon: val })} 
+            onChange={(val) => setFormData({ ...formData, icon: val })}
+            onUploaded={(url) => pendingUploadsRef.current.push(url)}
           />
           <div className="flex items-center gap-3">
             <input
