@@ -91,6 +91,16 @@ export const api = createApi({
       }),
       invalidatesTags: ['Skill'],
     }),
+    uploadSkillIcon: builder.mutation({
+      query: (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        return { url: '/admin/skills/icon', method: 'POST', body: formData };
+      },
+    }),
+    discardSkillIcons: builder.mutation({
+      query: (urls) => ({ url: '/admin/skills/icon', method: 'DELETE', body: { urls } }),
+    }),
     deleteSkill: builder.mutation({
       query: (id) => ({
         url: `/admin/skills/${id}`,
@@ -328,6 +338,8 @@ export const {
   useGetSkillsQuery,
   useCreateSkillMutation,
   useUpdateSkillMutation,
+  useUploadSkillIconMutation,
+  useDiscardSkillIconsMutation,
   useDeleteSkillMutation,
   useGetAnnouncementsQuery,
   useCreateAnnouncementMutation,
